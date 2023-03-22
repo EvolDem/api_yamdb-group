@@ -30,7 +30,7 @@ class CustomUser(AbstractUser):
         max_length=150,
         blank=True,
         verbose_name='Фамилия')
-    
+
     def __str__(self):
         return self.username
 
