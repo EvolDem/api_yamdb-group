@@ -11,25 +11,25 @@ CHOICES = (
 class CustomUser(AbstractUser):
     username = models.CharField(
         max_length=150,
-        verbose_name='users_username')
+        verbose_name='Ник')
     email = models.EmailField(
         max_length=254,
         unique=True,
-        verbose_name='users_email')
+        verbose_name='Почта')
     role = models.CharField(
         choices=CHOICES,
         default='User')
     bio = models.TextField(
         blank=True,
-        verbose_name='users_bio')
+        verbose_name='Дополнительная информация')
     first_name = models.CharField(
         max_length=150,
         blank=True,
-        verbose_name='users_first_name')
+        verbose_name='Имя')
     last_name = models.CharField(
         max_length=150,
         blank=True,
-        verbose_name='users_last_name')
+        verbose_name='Фамилия')
     
     def __str__(self):
         return self.username
