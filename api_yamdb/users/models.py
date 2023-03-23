@@ -34,12 +34,15 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
+    @property
     def is_user(self):
         return self.role == 'User'
 
+    @property
     def is_moderator(self):
         return self.role == 'Moderator'
 
+    @property
     def is_admin(self):
         return self.role == 'Admin'
 
@@ -48,5 +51,5 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'Пользователи'
         constraints = [
             models.UniqueConstraint(
-                fields=['username', 'email'], name='unique_user')
+                fields=['username', 'email'], name='unique_user_email')
         ]

@@ -4,14 +4,14 @@ from reviews.models import Category, Genre, Title, Review, Comment
 
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    list_display_links = ('id', 'name')
+    list_display = ('id', 'name',)
+    list_display_links = ('id', 'name',)
     search_fields = ('name',)
     list_filter = ('name',)
 
 
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
+    list_display = ('id', 'name',)
     search_fields = ('name',)
     list_filter = ('name',)
 
@@ -35,7 +35,7 @@ class ReviewAdmin(admin.ModelAdmin):
         'author',
         'score',
     )
-    search_fields = ('author', 'text')
+    search_fields = ('author', 'text',)
     list_filter = ('pub_date',)
     empty_value_display = '-пусто-'
 
