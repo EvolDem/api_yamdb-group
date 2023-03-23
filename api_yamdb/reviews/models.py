@@ -1,8 +1,7 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-User = get_user_model()
+from users.models import CustomUser
 
 
 class Category(models.Model):
@@ -77,7 +76,7 @@ class Review(models.Model):
 
     text = models.CharField(max_length=200)
     author = models.ForeignKey(
-        User,
+        CustomUser,
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор'
@@ -117,7 +116,7 @@ class Comment(models.Model):
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        CustomUser,
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Автор комментария'
