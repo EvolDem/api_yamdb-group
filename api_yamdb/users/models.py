@@ -34,6 +34,15 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
+    def is_user(self):
+        return self.role == 'User'
+
+    def is_moderator(self):
+        return self.role == 'Moderator'
+
+    def is_admin(self):
+        return self.role == 'Admin'
+
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
