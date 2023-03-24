@@ -8,7 +8,7 @@ class Category(models.Model):
     """Модель описывет категорию произведений."""
 
     name = models.CharField('Категория', max_length=200)
-    slug = models.SlugField('URL категории', unique=True)
+    slug = models.SlugField('URL категории', unique=True, db_index=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -23,7 +23,7 @@ class Genre(models.Model):
     """Модель описывет жанр произведений."""
 
     name = models.CharField('Название жанра', max_length=200)
-    slug = models.SlugField('URL категории', unique=True)
+    slug = models.SlugField('URL жанра', unique=True, db_index=True)
 
     class Meta:
         verbose_name = 'Жанр'
