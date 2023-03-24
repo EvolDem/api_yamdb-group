@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, viewsets
 
@@ -8,7 +9,6 @@ from .serializers import (CategorySerializer,
                           ReviewSerializer,
                           CommentSerializer)
 from .permissions import (IsAdminOrReadOnly,
-                          IsAdminStaff,
                           IsAuthorModeratorAdminOrReadOnly)
 
 
@@ -31,7 +31,7 @@ class GenreViewSet(mixins.ListModelMixin,
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     serializer_class = TitleSerializer
     permission_classes = [IsAdminOrReadOnly]
 
