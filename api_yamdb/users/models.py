@@ -17,6 +17,7 @@ class CustomUser(AbstractUser):
         unique=True,
         verbose_name='Почта')
     role = models.CharField(
+        max_length=15,
         choices=CHOICES,
         default='User')
     bio = models.TextField(
@@ -30,6 +31,9 @@ class CustomUser(AbstractUser):
         max_length=150,
         blank=True,
         verbose_name='Фамилия')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     def __str__(self):
         return self.username

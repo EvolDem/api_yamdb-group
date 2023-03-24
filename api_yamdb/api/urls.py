@@ -5,7 +5,7 @@ from api import views
 app_name = 'api'
 
 router = DefaultRouter()
-router.register('users', views.CustomUserViewSet, basename='users')
+# router.register('users', views.CustomUserViewSet, basename='users')
 router.register('categories', views.CategoryViewSet, basename='сategories')
 router.register('titles', views.TitleViewSet, basename='titles')
 router.register('genres', views.GenreViewSet, basename='genres')
@@ -17,6 +17,6 @@ router.register(
 
 urlpatterns = [
     path('v1/', include(router.urls)),
-    path('v1/auth/signup/', views.SignUpUser.as_view(), name='signup'),
-    path('v1/auth/token/', views.GetToken.as_view(), name='get_token'),
+    # path('v1/auth/signup/', views.SignUpUser.as_view(), name='signup'),
+    # path('v1/auth/token/', views.GetToken.as_view(), name='get_token'),
 ]

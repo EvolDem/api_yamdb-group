@@ -41,7 +41,7 @@ class Title(models.Model):
         max_length=200,
         db_index=True
     )
-    year = models.IntegerField('Год', max_length=4)
+    year = models.IntegerField('Год')
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
