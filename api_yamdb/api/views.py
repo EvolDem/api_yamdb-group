@@ -1,9 +1,9 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets, filters, permissions
+from rest_framework import mixins, viewsets, filters, permissions, status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import LimitOffsetPagination
@@ -16,9 +16,12 @@ from .serializers import (CategorySerializer,
                           ReviewSerializer,
                           CommentSerializer,
                           SignUpSerializer,
-                          GetTokenSerializer)
+                          GetTokenSerializer,
+                          CustomUserSerializer,
+                          NotAdminSerializer)
 from .permissions import (IsAdminOrReadOnly,
-                          IsAuthorModeratorAdminOrReadOnly)
+                          IsAuthorModeratorAdminOrReadOnly,
+                          IsAdminStaffOnly)
 
 
 class CategoryViewSet(mixins.ListModelMixin,
@@ -87,7 +90,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class SignUpView(APIView):
-    permission_classes = [permissions.AllowAny, ]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
@@ -118,13 +121,13 @@ class SignUpView(APIView):
             body=email_data['message'],
             from_email=email_data['email_from'],
             to=[email_data['email_to']]
-            )
+        )
         email.send()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class GetTokenView(APIView):
-    permission_classes = [permissions.AllowAny, ]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = GetTokenSerializer(data=request.data)
@@ -137,11 +140,41 @@ class GetTokenView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
         data = serializer.data
         if not CustomUser.objects.filter(username=data['username']).exists():
-            return Response('Такого пользователя не существует!', 
+            return Response('Такого пользователя не существует!',
                             status=status.HTTP_404_NOT_FOUND)
         user = CustomUser.objects.get(username=data['username'])
         if user.password != data['confirmation_code']:
             return Response('Неверный код подтверждения!',
                             status=status.HTTP_400_BAD_REQUEST)
-        return Response({'token': data['confirmation_code']}, 
+        return Response({'token': data['confirmation_code']},
                         status=status.HTTP_200_OK)
+
+
+class CustomUserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdminStaffOnly]
+    pagination_class = LimitOffsetPagination
+    search_fields = ['username']
+
+    @action(methods=['GET', 'PATCH'],
+            detail=False,
+            permission_classes=[permissions.IsAuthenticated],
+            url_path='me')
+    def your_account_details(self, request):
+        serializer = CustomUserSerializer(request.user)
+        if request.method == 'PATCH':
+            if request.user.is_admin:
+                serializer = CustomUserSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
+            else:
+                serializer = NotAdminSerializer(
+                    request.user,
+                    data=request.data,
+                    partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
