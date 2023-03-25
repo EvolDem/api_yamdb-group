@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from datetime import timedelta
@@ -35,7 +36,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -133,3 +133,12 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+
+#  подключаем движок filebased.EmailBackend
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+
+# указываем директорию, в которую будут складываться файлы писем
+
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
