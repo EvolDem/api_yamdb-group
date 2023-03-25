@@ -1,36 +1,46 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-CHOICES = (
-    ('User', 'Пользователь'),
-    ('Admin', 'Админ'),
-    ('Moderator', 'Модератор'),
+USER = 'user'
+MODERATOR = 'moderator'
+ADMIN = 'admin'
+
+ROLES = (
+    (USER, 'Пользователь'),
+    (MODERATOR, 'Модератор'),
+    (ADMIN, 'Админ'),
 )
 
 
 class CustomUser(AbstractUser):
     username = models.CharField(
         max_length=150,
-        verbose_name='Ник')
+        verbose_name='Никнэйм'
+    )
     email = models.EmailField(
         max_length=254,
         unique=True,
-        verbose_name='Почта')
-    role = models.CharField(
-        max_length=15,
-        choices=CHOICES,
-        default='User')
-    bio = models.TextField(
-        blank=True,
-        verbose_name='Дополнительная информация')
+        verbose_name='Email'
+    )
     first_name = models.CharField(
         max_length=150,
         blank=True,
-        verbose_name='Имя')
+        verbose_name='Имя'
+    )
     last_name = models.CharField(
         max_length=150,
         blank=True,
-        verbose_name='Фамилия')
+        verbose_name='Фамилия'
+    )
+    bio = models.TextField(
+        blank=True,
+        verbose_name='Дополнительная информация'
+    )
+    role = models.CharField(
+        max_length=12,
+        choices=ROLES,
+        default=USER
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -40,20 +50,21 @@ class CustomUser(AbstractUser):
 
     @property
     def is_user(self):
-        return self.role == 'User'
+        return self.role == USER
 
     @property
     def is_moderator(self):
-        return self.role == 'Moderator'
+        return self.role == MODERATOR
 
     @property
     def is_admin(self):
-        return self.role == 'Admin'
+        return self.role == ADMIN
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         constraints = [
             models.UniqueConstraint(
-                fields=['username', 'email'], name='unique_user_email')
-        ]
+                fields=['username', 'email'],
+                name='unique_username_email'
+            )]
