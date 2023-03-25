@@ -1,8 +1,11 @@
+import re
+
 from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 
+from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review, Comment
 
 
@@ -70,3 +73,33 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Comment
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomUser
+        fields = ('email', 'username')
+
+    def validate(self, data):
+        if data.get('username') == 'me':
+            raise serializers.ValidationError(
+                'Использовать имя "me" в качестве username запрещено')
+        if not re.match("^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+            raise serializers.ValidationError(
+                'Поле username содержит запрещенные символы')
+        return data
+
+
+class GetTokenSerializer(serializers.ModelSerializer):
+    confirmation_code = serializers.CharField(source='password')
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'confirmation_code')
+    
+    def validate(self, data):
+        if not re.match("^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+            raise serializers.ValidationError(
+                'Поле username содержит запрещенные символы')
+        return data

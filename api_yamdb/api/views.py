@@ -1,14 +1,22 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets, filters
+from rest_framework import mixins, viewsets, filters, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.core.mail import EmailMessage
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import LimitOffsetPagination
 
+from users.models import CustomUser
 from reviews.models import Category, Genre, Title, Review
 from .serializers import (CategorySerializer,
                           GenreSerializer,
                           TitleSerializer,
                           ReviewSerializer,
-                          CommentSerializer)
+                          CommentSerializer,
+                          SignUpSerializer,
+                          GetTokenSerializer)
 from .permissions import (IsAdminOrReadOnly,
                           IsAuthorModeratorAdminOrReadOnly)
 
@@ -76,3 +84,64 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
         serializer.save(author=self.request.user, review=review)
+
+
+class SignUpView(APIView):
+    permission_classes = [permissions.AllowAny, ]
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if not serializer.is_valid():
+            try:
+                if CustomUser.objects.filter(
+                    username=serializer.data['username'],
+                    email=serializer.data['email']).exists():
+                    return Response(serializer.data,
+                                    status=status.HTTP_200_OK)
+            except:
+                pass
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        user = serializer.save()
+        token = default_token_generator.make_token(user)
+        user.password = token
+        user.save()
+        email_data = {
+            'subject': 'Код подтверждения',
+            'email_from': 'from@example.com',
+            'email_to': user.email,
+            'message': f'Ваш код подтверждения: {token}'
+        }
+
+        email = EmailMessage(
+            subject=email_data['subject'],
+            body=email_data['message'],
+            from_email=email_data['email_from'],
+            to=[email_data['email_to']]
+            )
+        email.send()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetTokenView(APIView):
+    permission_classes = [permissions.AllowAny, ]
+
+    def post(self, request):
+        serializer = GetTokenSerializer(data=request.data)
+        if not serializer.is_valid():
+            try:
+                CustomUser.objects.get(
+                    username=serializer.data['username'])
+            except:
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.data
+        if not CustomUser.objects.filter(username=data['username']).exists():
+            return Response('Такого пользователя не существует!', 
+                            status=status.HTTP_404_NOT_FOUND)
+        user = CustomUser.objects.get(username=data['username'])
+        if user.password != data['confirmation_code']:
+            return Response('Неверный код подтверждения!',
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'token': data['confirmation_code']}, 
+                        status=status.HTTP_200_OK)
