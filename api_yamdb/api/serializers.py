@@ -85,7 +85,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя "me" в качестве username запрещено')
-        if not re.match("^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return data
@@ -99,7 +99,7 @@ class GetTokenSerializer(serializers.ModelSerializer):
         fields = ('username', 'confirmation_code')
     
     def validate(self, data):
-        if not re.match("^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return data
