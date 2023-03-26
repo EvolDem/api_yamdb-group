@@ -101,11 +101,12 @@ class SignUpView(APIView):
             try:
                 if CustomUser.objects.filter(
                     username=serializer.data['username'],
-                    email=serializer.data['email']).exists():
+                        email=serializer.data['email']).exists():
                     return Response(serializer.data,
                                     status=status.HTTP_200_OK)
-            except:
-                pass
+            except Exception:
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
@@ -138,7 +139,7 @@ class GetTokenView(APIView):
             try:
                 CustomUser.objects.get(
                     username=serializer.data['username'])
-            except:
+            except Exception:
                 return Response(serializer.errors,
                                 status=status.HTTP_400_BAD_REQUEST)
         data = serializer.data
@@ -164,6 +165,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET', 'PATCH'],
             detail=False,
+            serializer_class=NotAdminSerializer,
             permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':
