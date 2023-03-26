@@ -122,7 +122,9 @@ class GetTokenSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        exclude = ['id', 'password']
+        exclude = ['id', 'password', 'last_login', 'is_superuser',
+                   'is_staff', 'is_active', 'date_joined',
+                   'groups', 'user_permissions']
         model = CustomUser
 
     def validate_username(self, value):
