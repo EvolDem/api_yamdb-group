@@ -125,11 +125,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         exclude = ['id', 'password']
         model = CustomUser
 
-    def validate(self, data):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+    def validate_username(self, value):
+        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
-        return data
+        return value
 
 
 class NotAdminSerializer(serializers.ModelSerializer):
@@ -138,3 +138,9 @@ class NotAdminSerializer(serializers.ModelSerializer):
         exclude = ['id']
         model = CustomUser
         read_only_fields = ['role']
+
+    def validate_username(self, value):
+        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
+            raise serializers.ValidationError(
+                'Поле username содержит запрещенные символы')
+        return value
