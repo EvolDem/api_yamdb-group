@@ -1,12 +1,10 @@
 import re
 
 from django.shortcuts import get_object_or_404
-
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
-
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
-from reviews.models import Category, Genre, Title, Review, Comment
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -25,12 +23,28 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
 
 
-class TitleSerializer(serializers.ModelSerializer):
+class OutputTitleSerializer(serializers.ModelSerializer):
     """Сериализатор модели Title."""
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
     rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        fields = '__all__'
+        model = Title
+
+
+class InputTitleSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        many=True
+    )
 
     class Meta:
         fields = '__all__'

@@ -1,27 +1,24 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import EmailMessage
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, viewsets, filters, permissions, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.core.mail import EmailMessage
-from django.contrib.auth.tokens import default_token_generator
 from rest_framework.pagination import LimitOffsetPagination
-
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
-from reviews.models import Category, Genre, Title, Review
-from .serializers import (CategorySerializer,
-                          GenreSerializer,
-                          TitleSerializer,
-                          ReviewSerializer,
-                          CommentSerializer,
-                          SignUpSerializer,
-                          GetTokenSerializer,
-                          CustomUserSerializer,
-                          NotAdminSerializer)
-from .permissions import (IsAdminOrReadOnly,
-                          IsAuthorModeratorAdminOrReadOnly,
-                          IsAdminStaffOnly)
+
+from .filters import TitleFilter
+from .permissions import (IsAdminOrReadOnly, IsAdminStaffOnly,
+                          IsAuthorModeratorAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          CustomUserSerializer, GenreSerializer,
+                          GetTokenSerializer, InputTitleSerializer,
+                          NotAdminSerializer, OutputTitleSerializer,
+                          ReviewSerializer, SignUpSerializer)
 
 
 class CategoryViewSet(mixins.ListModelMixin,
@@ -56,9 +53,15 @@ class GenreViewSet(mixins.ListModelMixin,
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
-    serializer_class = TitleSerializer
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return OutputTitleSerializer
+        return InputTitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -159,9 +162,8 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET', 'PATCH'],
             detail=False,
-            permission_classes=[permissions.IsAuthenticated],
-            url_path='me')
-    def your_account_details(self, request):
+            permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
         serializer = CustomUserSerializer(request.user)
         if request.method == 'PATCH':
             if request.user.is_admin:
