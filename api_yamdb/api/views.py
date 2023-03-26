@@ -159,6 +159,7 @@ class GetTokenView(APIView):
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [permissions.IsAuthenticated, IsAdminStaffOnly]
     pagination_class = LimitOffsetPagination
     filter_backends = [filters.SearchFilter]
