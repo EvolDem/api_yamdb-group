@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
@@ -104,8 +105,9 @@ class SignUpView(APIView):
                     email=serializer.data['email']).exists():
                     return Response(serializer.data,
                                     status=status.HTTP_200_OK)
-            except:
-                pass
+            except Exception:
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         user = serializer.save()
@@ -138,7 +140,7 @@ class GetTokenView(APIView):
             try:
                 CustomUser.objects.get(
                     username=serializer.data['username'])
-            except:
+            except Exception:
                 return Response(serializer.errors,
                                 status=status.HTTP_400_BAD_REQUEST)
         data = serializer.data
@@ -149,7 +151,8 @@ class GetTokenView(APIView):
         if user.password != data['confirmation_code']:
             return Response('Неверный код подтверждения!',
                             status=status.HTTP_400_BAD_REQUEST)
-        return Response({'token': data['confirmation_code']},
+        refresh = RefreshToken.for_user(user)
+        return Response({'token': str(refresh.access_token)},
                         status=status.HTTP_200_OK)
 
 

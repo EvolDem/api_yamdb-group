@@ -122,8 +122,14 @@ class GetTokenSerializer(serializers.ModelSerializer):
 class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        exclude = ['id']
+        exclude = ['id', 'password']
         model = CustomUser
+
+    def validate(self, data):
+        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+            raise serializers.ValidationError(
+                'Поле username содержит запрещенные символы')
+        return data
 
 
 class NotAdminSerializer(serializers.ModelSerializer):
