@@ -158,25 +158,22 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     serializer_class = CustomUserSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminStaffOnly]
     pagination_class = LimitOffsetPagination
+    filter_backends = [filters.SearchFilter]
     search_fields = ['username']
+    lookup_field = 'username'
 
     @action(methods=['GET', 'PATCH'],
             detail=False,
             permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
-        serializer = CustomUserSerializer(request.user)
-        if request.method == 'PATCH':
-            if request.user.is_admin:
-                serializer = CustomUserSerializer(
-                    request.user,
-                    data=request.data,
-                    partial=True)
-            else:
-                serializer = NotAdminSerializer(
-                    request.user,
-                    data=request.data,
-                    partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.get_serializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
