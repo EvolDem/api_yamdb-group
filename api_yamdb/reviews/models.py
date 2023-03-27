@@ -57,7 +57,7 @@ class Title(models.Model):
         db_index=True
     )
     year = models.IntegerField(
-        'Год выпуска',
+        'Год выпуска'
     )
     description = models.TextField(
         'Описание'
