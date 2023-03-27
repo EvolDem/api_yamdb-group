@@ -1,13 +1,12 @@
 import re
 
 from django.shortcuts import get_object_or_404
-from django.conf import settings
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
-from api_yamdb.settings import REGEXP_USERNAME
+from api_yamdb.settings import REGEXP_USERNAME, MINSCORE, MAXSCORE
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -27,7 +26,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class OutputTitleSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Title."""
+    """Сериализатор модели Title для чтения данных."""
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
@@ -39,6 +38,8 @@ class OutputTitleSerializer(serializers.ModelSerializer):
 
 
 class InputTitleSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Title для измнения данных."""
+
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -61,7 +62,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     def validate_score(self, value):
-        if settings.MINSCORE > value > settings.MAXSCORE:
+        if MINSCORE > value > MAXSCORE:
             raise serializers.ValidationError(
                 'Допускается оценка только от 1 до 10!')
         return value
@@ -93,6 +94,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """Сериализатор регистрации пользователя."""
 
     class Meta:
         model = CustomUser
@@ -109,6 +111,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class GetTokenSerializer(serializers.ModelSerializer):
+    """Сериализатор получения токена."""
+
     confirmation_code = serializers.CharField(source='password')
 
     class Meta:
@@ -123,6 +127,7 @@ class GetTokenSerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    """Сериализатор модели CustomUser."""
 
     class Meta:
         exclude = ['id', 'password', 'last_login', 'is_superuser',
@@ -137,7 +142,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return value
 
 
-class NotAdminSerializer(serializers.ModelSerializer):
+class SelfUserSerializer(serializers.ModelSerializer):
+    """Сериализатор данных учётной записи."""
 
     class Meta:
         exclude = ['id']

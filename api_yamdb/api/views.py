@@ -18,7 +18,7 @@ from .permissions import (IsAdminOrReadOnly, IsAdminStaffOnly,
 from .serializers import (CategorySerializer, CommentSerializer,
                           CustomUserSerializer, GenreSerializer,
                           GetTokenSerializer, InputTitleSerializer,
-                          NotAdminSerializer, OutputTitleSerializer,
+                          SelfUserSerializer, OutputTitleSerializer,
                           ReviewSerializer, SignUpSerializer)
 
 
@@ -34,21 +34,21 @@ class CustomModelMixin(mixins.ListModelMixin,
 
 
 class CategoryViewSet(CustomModelMixin):
-    """Получение списка категорий. Доступ без токена на чтение"""
+    """Получение списка категорий. Доступ без токена на чтение."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class GenreViewSet(CustomModelMixin):
-    """Получение списка жанров. Доступ без токена на чтение"""
+    """Получение списка жанров. Доступ без токена на чтение."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    """Получение списка произведений. Доступ без токена на чтение"""
+    """Получение списка произведений. Доступ без токена на чтение."""
 
     queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     permission_classes = [IsAdminOrReadOnly]
@@ -63,7 +63,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """Получение списка отзывов. Доступ без токена на чтение"""
+    """Получение списка отзывов. Доступ без токена на чтение."""
 
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
@@ -79,7 +79,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """Получение списка комментариев к отзывам. Доступ без токена на чтение"""
+    """Получение списка комментариев к отзывам. Доступ без токена на чтение."""
 
     serializer_class = CommentSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
@@ -95,6 +95,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class SignUpView(APIView):
+    """Регистрация нового пользователя."""
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -133,6 +135,8 @@ class SignUpView(APIView):
 
 
 class GetTokenView(APIView):
+    """Получение токена для аунтификации пользователя."""
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -158,7 +162,7 @@ class GetTokenView(APIView):
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
-    """Получение списка пользователей. Доступ только с токеном"""
+    """Получение списка пользователей. Доступ только с токеном."""
 
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
@@ -171,7 +175,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET', 'PATCH'],
             detail=False,
-            serializer_class=NotAdminSerializer,
+            serializer_class=SelfUserSerializer,
             permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':

@@ -5,9 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MINSCORE = 0
-MAXSCORE = 10
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -146,3 +143,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
 REGEXP_USERNAME = r'^[a-zA-Z\d\_\.\@\+\-]*$'
+
+MINSCORE = 0
+MAXSCORE = 10
