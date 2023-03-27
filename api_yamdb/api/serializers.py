@@ -1,6 +1,7 @@
 import re
 
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 
@@ -60,7 +61,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     def validate_score(self, value):
-        if 0 > value > 10:
+        if settings.MINSCORE > value > settings.MAXSCORE:
             raise serializers.ValidationError(
                 'Допускается оценка только от 1 до 10!')
         return value
