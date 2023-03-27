@@ -6,6 +6,7 @@ from rest_framework.relations import SlugRelatedField
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
+from api_yamdb.settings import REGEXP_USERNAME
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -100,7 +101,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя "me" в качестве username запрещено')
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+        if not re.match(REGEXP_USERNAME, data.get('username')):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return data
@@ -113,11 +114,11 @@ class GetTokenSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('username', 'confirmation_code')
 
-    def validate(self, data):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+    def validate_username(self, value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
-        return data
+        return value
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -129,7 +130,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
 
     def validate_username(self, value):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return value
@@ -143,7 +144,7 @@ class NotAdminSerializer(serializers.ModelSerializer):
         read_only_fields = ['role']
 
     def validate_username(self, value):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return value

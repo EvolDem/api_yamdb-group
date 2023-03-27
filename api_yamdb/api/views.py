@@ -22,14 +22,10 @@ from .serializers import (CategorySerializer, CommentSerializer,
                           ReviewSerializer, SignUpSerializer)
 
 
-class CategoryViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
-    """Получение списка категорий. Доступ без токена на чтение"""
-
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class CustomModelMixin(mixins.ListModelMixin,
+                       mixins.CreateModelMixin,
+                       mixins.DestroyModelMixin,
+                       viewsets.GenericViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = [filters.SearchFilter]
@@ -37,22 +33,23 @@ class CategoryViewSet(mixins.ListModelMixin,
     lookup_field = 'slug'
 
 
-class GenreViewSet(mixins.ListModelMixin,
-                   mixins.CreateModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+class CategoryViewSet(CustomModelMixin):
     """Получение списка категорий. Доступ без токена на чтение"""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(CustomModelMixin):
+    """Получение списка жанров. Доступ без токена на чтение"""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    pagination_class = LimitOffsetPagination
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
-    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Получение списка произведений. Доступ без токена на чтение"""
+
     queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -66,6 +63,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Получение списка отзывов. Доступ без токена на чтение"""
+
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -80,6 +79,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Получение списка комментариев к отзывам. Доступ без токена на чтение"""
+
     serializer_class = CommentSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -157,6 +158,8 @@ class GetTokenView(APIView):
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
+    """Получение списка пользователей. Доступ только с токеном"""
+
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']

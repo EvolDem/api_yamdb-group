@@ -2,6 +2,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from users.models import CustomUser
+from .validators import validate_year
 
 
 class Category(models.Model):
@@ -57,7 +58,8 @@ class Title(models.Model):
         db_index=True
     )
     year = models.IntegerField(
-        'Год выпуска'
+        'Год выпуска',
+        validators=[validate_year]
     )
     description = models.TextField(
         'Описание'
