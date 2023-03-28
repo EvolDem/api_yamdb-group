@@ -101,25 +101,15 @@ class SignUpView(APIView):
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
-        if not serializer.is_valid():
-            try:
-                if CustomUser.objects.filter(
-                    username=serializer.data['username'],
-                        email=serializer.data['email']).exists():
-                    return Response(serializer.data,
-                                    status=status.HTTP_200_OK)
-            except Exception:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        user = serializer.save()
+        if CustomUser.objects.filter(**request.data.dict()).exists():
+            return Response(serializer.initial_data, status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        user = CustomUser.objects.create(**serializer.validated_data)
         token = default_token_generator.make_token(user)
         user.password = token
         user.save()
         email_data = {
             'subject': 'Код подтверждения',
-            'email_from': 'from@example.com',
             'email_to': user.email,
             'message': f'Ваш код подтверждения: {token}'
         }
@@ -127,7 +117,6 @@ class SignUpView(APIView):
         email = EmailMessage(
             subject=email_data['subject'],
             body=email_data['message'],
-            from_email=email_data['email_from'],
             to=[email_data['email_to']]
         )
         email.send()
@@ -141,14 +130,8 @@ class GetTokenView(APIView):
 
     def post(self, request):
         serializer = GetTokenSerializer(data=request.data)
-        if not serializer.is_valid():
-            try:
-                CustomUser.objects.get(
-                    username=serializer.data['username'])
-            except Exception:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-        data = serializer.data
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
         if not CustomUser.objects.filter(username=data['username']).exists():
             return Response('Такого пользователя не существует!',
                             status=status.HTTP_404_NOT_FOUND)
