@@ -13,6 +13,8 @@ ROLES = (
 
 
 class CustomUser(AbstractUser):
+    """Модель описывает пользователя."""
+
     username = models.CharField(
         max_length=150,
         unique=True,
@@ -59,7 +61,7 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == ADMIN
+        return self.role == ADMIN or self.is_staff
 
     class Meta:
         verbose_name = 'Пользователь'

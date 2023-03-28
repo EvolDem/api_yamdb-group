@@ -9,27 +9,23 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
-
 from .filters import TitleFilter
 from .permissions import (IsAdminOrReadOnly, IsAdminStaffOnly,
                           IsAuthorModeratorAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                           CustomUserSerializer, GenreSerializer,
                           GetTokenSerializer, InputTitleSerializer,
-                          NotAdminSerializer, OutputTitleSerializer,
+                          SelfUserSerializer, OutputTitleSerializer,
                           ReviewSerializer, SignUpSerializer)
 
 
-class CategoryViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
-    """Получение списка категорий. Доступ без токена на чтение"""
-
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class CustomModelMixin(mixins.ListModelMixin,
+                       mixins.CreateModelMixin,
+                       mixins.DestroyModelMixin,
+                       viewsets.GenericViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = [filters.SearchFilter]
@@ -37,22 +33,23 @@ class CategoryViewSet(mixins.ListModelMixin,
     lookup_field = 'slug'
 
 
-class GenreViewSet(mixins.ListModelMixin,
-                   mixins.CreateModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
-    """Получение списка категорий. Доступ без токена на чтение"""
+class CategoryViewSet(CustomModelMixin):
+    """Получение списка категорий. Доступ без токена на чтение."""
+
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(CustomModelMixin):
+    """Получение списка жанров. Доступ без токена на чтение."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminOrReadOnly]
-    pagination_class = LimitOffsetPagination
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
-    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """Получение списка произведений. Доступ без токена на чтение."""
+
     queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     permission_classes = [IsAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -66,6 +63,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Получение списка отзывов. Доступ без токена на чтение."""
+
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -80,6 +79,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Получение списка комментариев к отзывам. Доступ без токена на чтение."""
+
     serializer_class = CommentSerializer
     permission_classes = [IsAuthorModeratorAdminOrReadOnly]
     pagination_class = LimitOffsetPagination
@@ -94,29 +95,21 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class SignUpView(APIView):
+    """Регистрация нового пользователя."""
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
-        if not serializer.is_valid():
-            try:
-                if CustomUser.objects.filter(
-                    username=serializer.data['username'],
-                        email=serializer.data['email']).exists():
-                    return Response(serializer.data,
-                                    status=status.HTTP_200_OK)
-            except Exception:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        user = serializer.save()
+        if CustomUser.objects.filter(**request.data.dict()).exists():
+            return Response(serializer.initial_data, status=status.HTTP_200_OK)
+        serializer.is_valid(raise_exception=True)
+        user = CustomUser.objects.create(**serializer.validated_data)
         token = default_token_generator.make_token(user)
         user.password = token
         user.save()
         email_data = {
             'subject': 'Код подтверждения',
-            'email_from': 'from@example.com',
             'email_to': user.email,
             'message': f'Ваш код подтверждения: {token}'
         }
@@ -124,7 +117,6 @@ class SignUpView(APIView):
         email = EmailMessage(
             subject=email_data['subject'],
             body=email_data['message'],
-            from_email=email_data['email_from'],
             to=[email_data['email_to']]
         )
         email.send()
@@ -132,18 +124,14 @@ class SignUpView(APIView):
 
 
 class GetTokenView(APIView):
+    """Получение токена для аунтификации пользователя."""
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = GetTokenSerializer(data=request.data)
-        if not serializer.is_valid():
-            try:
-                CustomUser.objects.get(
-                    username=serializer.data['username'])
-            except Exception:
-                return Response(serializer.errors,
-                                status=status.HTTP_400_BAD_REQUEST)
-        data = serializer.data
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
         if not CustomUser.objects.filter(username=data['username']).exists():
             return Response('Такого пользователя не существует!',
                             status=status.HTTP_404_NOT_FOUND)
@@ -157,6 +145,8 @@ class GetTokenView(APIView):
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
+    """Получение списка пользователей. Доступ только с токеном."""
+
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -168,7 +158,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     @action(methods=['GET', 'PATCH'],
             detail=False,
-            serializer_class=NotAdminSerializer,
+            serializer_class=SelfUserSerializer,
             permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':

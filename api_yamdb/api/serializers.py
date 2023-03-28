@@ -3,8 +3,10 @@ import re
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
+
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
+from api_yamdb.settings import REGEXP_USERNAME, MINSCORE, MAXSCORE
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,7 +26,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class OutputTitleSerializer(serializers.ModelSerializer):
-    """Сериализатор модели Title."""
+    """Сериализатор модели Title для чтения данных."""
 
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
@@ -36,6 +38,8 @@ class OutputTitleSerializer(serializers.ModelSerializer):
 
 
 class InputTitleSerializer(serializers.ModelSerializer):
+    """Сериализатор модели Title для измнения данных."""
+
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug'
@@ -58,7 +62,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = SlugRelatedField(slug_field='username', read_only=True)
 
     def validate_score(self, value):
-        if 0 > value > 10:
+        if MINSCORE > value > MAXSCORE:
             raise serializers.ValidationError(
                 'Допускается оценка только от 1 до 10!')
         return value
@@ -90,6 +94,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    """Сериализатор регистрации пользователя."""
 
     class Meta:
         model = CustomUser
@@ -99,27 +104,30 @@ class SignUpSerializer(serializers.ModelSerializer):
         if data.get('username') == 'me':
             raise serializers.ValidationError(
                 'Использовать имя "me" в качестве username запрещено')
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+        if not re.match(REGEXP_USERNAME, data.get('username')):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return data
 
 
 class GetTokenSerializer(serializers.ModelSerializer):
+    """Сериализатор получения токена."""
+
     confirmation_code = serializers.CharField(source='password')
 
     class Meta:
         model = CustomUser
         fields = ('username', 'confirmation_code')
 
-    def validate(self, data):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", data.get('username')):
+    def validate_username(self, value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
-        return data
+        return value
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    """Сериализатор модели CustomUser."""
 
     class Meta:
         exclude = ['id', 'password', 'last_login', 'is_superuser',
@@ -128,13 +136,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
 
     def validate_username(self, value):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return value
 
 
-class NotAdminSerializer(serializers.ModelSerializer):
+class SelfUserSerializer(serializers.ModelSerializer):
+    """Сериализатор данных учётной записи."""
 
     class Meta:
         exclude = ['id']
@@ -142,7 +151,7 @@ class NotAdminSerializer(serializers.ModelSerializer):
         read_only_fields = ['role']
 
     def validate_username(self, value):
-        if not re.match(r"^[a-zA-Z\d\_\.\@\+\-]*$", value):
+        if not re.match(REGEXP_USERNAME, value):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
         return value

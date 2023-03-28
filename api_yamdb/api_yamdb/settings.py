@@ -1,13 +1,14 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
@@ -133,10 +134,17 @@ SIMPLE_JWT = {
 }
 
 
-#  подключаем движок filebased.EmailBackend
+# Подключаем движок filebased.EmailBackend
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
-# указываем директорию, в которую будут складываться файлы писем
+# Указываем директорию, в которую будут складываться файлы писем
 
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+
+# Константы проекта
+
+REGEXP_USERNAME = r'^[a-zA-Z\d\_\.\@\+\-]*$'
+
+MINSCORE = 0
+MAXSCORE = 10
