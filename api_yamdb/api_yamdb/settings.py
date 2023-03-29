@@ -148,3 +148,5 @@ REGEXP_USERNAME = r'^[a-zA-Z\d\_\.\@\+\-]*$'
 
 MINSCORE = 0
 MAXSCORE = 10
+
+FORBIDDEN_USERNAME = "me"

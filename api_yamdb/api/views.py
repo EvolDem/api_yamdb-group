@@ -106,8 +106,6 @@ class SignUpView(APIView):
         serializer.is_valid(raise_exception=True)
         user = CustomUser.objects.create(**serializer.validated_data)
         token = default_token_generator.make_token(user)
-        user.password = token
-        user.save()
         email_data = {
             'subject': 'Код подтверждения',
             'email_to': user.email,
@@ -131,12 +129,13 @@ class GetTokenView(APIView):
     def post(self, request):
         serializer = GetTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        data = serializer.data
         if not CustomUser.objects.filter(username=data['username']).exists():
             return Response('Такого пользователя не существует!',
                             status=status.HTTP_404_NOT_FOUND)
         user = CustomUser.objects.get(username=data['username'])
-        if user.password != data['confirmation_code']:
+        if not default_token_generator.check_token(
+            user, data['confirmation_code']):
             return Response('Неверный код подтверждения!',
                             status=status.HTTP_400_BAD_REQUEST)
         refresh = RefreshToken.for_user(user)

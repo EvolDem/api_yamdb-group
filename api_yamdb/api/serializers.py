@@ -6,7 +6,8 @@ from rest_framework.relations import SlugRelatedField
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
-from api_yamdb.settings import REGEXP_USERNAME, MINSCORE, MAXSCORE
+from api_yamdb.settings import (FORBIDDEN_USERNAME, REGEXP_USERNAME,
+                                MINSCORE, MAXSCORE)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -101,9 +102,10 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('email', 'username')
 
     def validate(self, data):
-        if data.get('username') == 'me':
+        if data.get('username') == FORBIDDEN_USERNAME:
             raise serializers.ValidationError(
-                'Использовать имя "me" в качестве username запрещено')
+                f'Использовать имя {FORBIDDEN_USERNAME} '
+                f'в качестве username запрещено')
         if not re.match(REGEXP_USERNAME, data.get('username')):
             raise serializers.ValidationError(
                 'Поле username содержит запрещенные символы')
@@ -114,6 +116,7 @@ class GetTokenSerializer(serializers.ModelSerializer):
     """Сериализатор получения токена."""
 
     confirmation_code = serializers.CharField(source='password')
+    username = serializers.CharField(validators=[])
 
     class Meta:
         model = CustomUser
