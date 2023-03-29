@@ -3,7 +3,7 @@ from django.core.mail import EmailMessage
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 from .filters import TitleFilter
+from .mixins import CustomModelMixin
 from .permissions import (IsAdminOrReadOnly, IsAdminStaffOnly,
                           IsAuthorModeratorAdminOrReadOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
@@ -20,17 +21,6 @@ from .serializers import (CategorySerializer, CommentSerializer,
                           GetTokenSerializer, InputTitleSerializer,
                           SelfUserSerializer, OutputTitleSerializer,
                           ReviewSerializer, SignUpSerializer)
-
-
-class CustomModelMixin(mixins.ListModelMixin,
-                       mixins.CreateModelMixin,
-                       mixins.DestroyModelMixin,
-                       viewsets.GenericViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-    pagination_class = LimitOffsetPagination
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
-    lookup_field = 'slug'
 
 
 class CategoryViewSet(CustomModelMixin):
@@ -135,7 +125,7 @@ class GetTokenView(APIView):
                             status=status.HTTP_404_NOT_FOUND)
         user = CustomUser.objects.get(username=data['username'])
         if not default_token_generator.check_token(
-            user, data['confirmation_code']):
+                user, data['confirmation_code']):
             return Response('Неверный код подтверждения!',
                             status=status.HTTP_400_BAD_REQUEST)
         refresh = RefreshToken.for_user(user)

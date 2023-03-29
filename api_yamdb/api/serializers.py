@@ -1,13 +1,12 @@
-import re
-
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 
+from api_yamdb.settings import (FORBIDDEN_USERNAME,
+                                MINSCORE, MAXSCORE)
+from .mixins import ValidateUsernameSerializerMixin
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
-from api_yamdb.settings import (FORBIDDEN_USERNAME, REGEXP_USERNAME,
-                                MINSCORE, MAXSCORE)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -94,7 +93,8 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
 
 
-class SignUpSerializer(serializers.ModelSerializer):
+class SignUpSerializer(serializers.ModelSerializer,
+                       ValidateUsernameSerializerMixin):
     """Сериализатор регистрации пользователя."""
 
     class Meta:
@@ -106,13 +106,11 @@ class SignUpSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f'Использовать имя {FORBIDDEN_USERNAME} '
                 f'в качестве username запрещено')
-        if not re.match(REGEXP_USERNAME, data.get('username')):
-            raise serializers.ValidationError(
-                'Поле username содержит запрещенные символы')
         return data
 
 
-class GetTokenSerializer(serializers.ModelSerializer):
+class GetTokenSerializer(serializers.ModelSerializer,
+                         ValidateUsernameSerializerMixin):
     """Сериализатор получения токена."""
 
     confirmation_code = serializers.CharField(source='password')
@@ -122,14 +120,9 @@ class GetTokenSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('username', 'confirmation_code')
 
-    def validate_username(self, value):
-        if not re.match(REGEXP_USERNAME, value):
-            raise serializers.ValidationError(
-                'Поле username содержит запрещенные символы')
-        return value
 
-
-class CustomUserSerializer(serializers.ModelSerializer):
+class CustomUserSerializer(serializers.ModelSerializer,
+                           ValidateUsernameSerializerMixin):
     """Сериализатор модели CustomUser."""
 
     class Meta:
@@ -138,23 +131,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
                    'groups', 'user_permissions']
         model = CustomUser
 
-    def validate_username(self, value):
-        if not re.match(REGEXP_USERNAME, value):
-            raise serializers.ValidationError(
-                'Поле username содержит запрещенные символы')
-        return value
 
-
-class SelfUserSerializer(serializers.ModelSerializer):
+class SelfUserSerializer(serializers.ModelSerializer,
+                         ValidateUsernameSerializerMixin):
     """Сериализатор данных учётной записи."""
 
     class Meta:
         exclude = ['id']
         model = CustomUser
         read_only_fields = ['role']
-
-    def validate_username(self, value):
-        if not re.match(REGEXP_USERNAME, value):
-            raise serializers.ValidationError(
-                'Поле username содержит запрещенные символы')
-        return value
